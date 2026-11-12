@@ -1,0 +1,4 @@
+data/
+__pycache__/
+.DS_Store
+figures/fig2_sample_grid.png
