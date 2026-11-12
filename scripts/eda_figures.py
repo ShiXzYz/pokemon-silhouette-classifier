@@ -124,7 +124,7 @@ def fig3_analysis_plan():
         ("Baselines", "random guess 0.7%  &  k-NN on 64×64 pixels"),
         ("Fine-tune ResNet-18 ×2", "color & silhouette, same settings, augmentation"),
         ("Tune on validation", "learning rate, epochs"),
-        ("Evaluate on HOME", "top-1, top-5, macro F1; goal ≥60% silhouette top-1"),
+        ("Evaluate on HOME", "top-1, top-5, macro F1; goal >70% silhouette top-1"),
         ("Analyze", "color vs. silhouette gap, confusion pairs, Grad-CAM"),
     ]
     box_h, gap, w = 0.62, 0.32, 3.4
