@@ -1,0 +1,9 @@
+### License and Copyright
+
+The original code in this repository is licensed under the MIT License. Copyright (c) 2026 The Good Guys.
+
+Pokémon names, characters, sprites, and artwork are the property of their respective rights holders, including The Pokémon Company, Nintendo, and Game Freak. The MIT License does not apply to these third-party materials.
+
+This project is intended for academic research and educational purposes. Pokémon images are not redistributed through this repository. Instead, the provided scripts retrieve the necessary images from the PokeAPI sprites repository.
+
+See the [LICENSE] file for the full software license.
