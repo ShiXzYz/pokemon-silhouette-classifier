@@ -45,11 +45,14 @@ Official artwork is excluded from every split because it is very close in
 style to HOME, so putting it in training would leak the test style. In our CNN
 experiments, `03_train_cnn.py --exclude-gen1` additionally drops the three Gen I
 styles from training (leaving 1,359 training images) to test whether their
-noisier silhouettes help or hurt; validation and test are unchanged.
+noisier silhouettes help or hurt; validation and test are unchanged. **Outcome
+(MI3):** both final models were trained **with** Gen I. Validation top-1 was
+100% either way, so the choice was made on validation loss (color 0.042 with vs
+0.120 without; silhouette 0.061 vs 0.069). See `OUTPUT/tables/val_runs.csv`.
 
 ## Provenance
 
-- **Images**: the community-maintained **PokeAPI sprites repository**
+- **Images**: the community-maintained **PokeAPI sprites repository** [1]
   (<https://github.com/PokeAPI/sprites>), pinned to commit
   `1b3b7c0a538dd2226ae08d0d2f8955125075bbd4` (committed 2026-11-03) so that
   rebuilds are exact. We used one folder per game, front default sprite only.
@@ -57,7 +60,7 @@ noisier silhouettes help or hurt; validation and test are unchanged.
   opaque on a white background, so for those games we used each folder's
   `transparent/` copy. HOME images come from `sprites/pokemon/other/home` and
   official artwork from `sprites/pokemon/other/official-artwork`.
-- **Names and primary types**: the **PokeAPI REST API**
+- **Names and primary types**: the **PokeAPI REST API** [2]
   (<https://pokeapi.co/api/v2/pokemon/{id}>), queried once per Pokémon and
   cached in `pokeapi_cache.json`. The "primary type" is the type in slot 1.
   These are current PokeAPI typings (Generation VI onward), so for example
@@ -71,7 +74,7 @@ image:
    sprites.
 2. Center on a transparent square canvas with a 5% margin (padding rather
    than stretching keeps the aspect ratio, which matters for silhouettes).
-3. Resize to 224×224 (ResNet-18's input size): nearest-neighbor for pixel
+3. Resize to 224×224 (ResNet-18's input size [3]): nearest-neighbor for pixel
    sprites (longest side ≤ 128 px) so pixels stay crisp, area averaging (BOX)
    for large art (HOME, official artwork). BOX avoids the faint halo of
    partially transparent pixels that Lanczos resampling leaves around outlines,
@@ -92,7 +95,7 @@ no Pokémon is missing from any split.
 - **The Pokémon images are not covered by our license and are not
   distributed here.** All Pokémon sprites, renders, and artwork are
   © The Pokémon Company / Nintendo / Creatures Inc. / GAME FREAK inc. The
-  PokeAPI sprites repository is distributed under CC0 1.0 Universal, but its
+  PokeAPI sprites repository [1] is distributed under CC0 1.0 Universal [4], but its
   `LICENCE.txt` states that "All image contents within are Copyright The
   Pokémon Company"; CC0 covers the repository's organization, not the artwork. We download them locally only for non-commercial academic
   analysis, keep them out of version control (`DATA/images/` and `DATA/raw/`
@@ -124,7 +127,8 @@ no Pokémon is missing from any split.
 - **Silhouette quality varies by style.** Early Gen I sprites (red-blue,
   red-green-japan) have fragmented silhouettes: outline pixels detached from
   the body (see the second plot below). We report this instead of hand-editing
-  sprites, and we test its effect with the `--exclude-gen1` experiment.
+  sprites, and we tested its effect with the `--exclude-gen1` experiment
+  (validation favored keeping Gen I; see Data Summary).
 
 ## Data Dictionary
 
@@ -215,3 +219,13 @@ The script:
 **unchanged**. That confirms you have byte-identical labels, splits, and fill
 ratios. The console should report `2265 rows`, `Dropped for no alpha channel: 0`,
 and 1,812 / 151 / 151 / 151 images in train / val / test / excluded.
+
+## References
+
+[1] PokeAPI, "sprites: Collection of Pokémon sprites," GitHub repository, commit 1b3b7c0a538dd2226ae08d0d2f8955125075bbd4. [Online]. Available: https://github.com/PokeAPI/sprites (accessed Nov. 20, 2026).
+
+[2] PokeAPI, "PokéAPI: The RESTful Pokémon API," documentation. [Online]. Available: https://pokeapi.co/docs/v2 (accessed Nov. 20, 2026).
+
+[3] K. He, X. Zhang, S. Ren, and J. Sun, "Deep residual learning for image recognition," in *Proc. IEEE Conf. Computer Vision and Pattern Recognition (CVPR)*, 2016, pp. 770–778.
+
+[4] Creative Commons, "CC0 1.0 Universal (CC0 1.0) Public Domain Dedication." [Online]. Available: https://creativecommons.org/publicdomain/zero/1.0/ (accessed Nov. 20, 2026).

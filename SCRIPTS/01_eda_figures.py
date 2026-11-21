@@ -1,35 +1,16 @@
 """
-=============================================================================
 01_eda_figures.py - Exploratory data analysis figures
-=============================================================================
-Project : DS 4002 Project 3, "Who's That Pokemon?" (pokemon-silhouette-classifier)
-Authors : Brian Ryu, Keegan Jewell, Nathan Nguyen
+Project: DS 4002 Project 3, "Who's That Pokemon?" (pokemon-silhouette-classifier)
+Authors: Brian Ryu, Keegan Jewell, Nathan Nguyen
 
-PURPOSE
-    Describe the dataset built by 00_build_dataset.py: how many images come from
-    each art style and split, what the images look like, how much of each
-    224x224 frame the Pokemon fills, and how clean the silhouettes are
-    (fragmentation). Also draws the analysis-plan flowchart from MI2.
-
-INPUTS
-    - DATA/manifest.csv
-    - DATA/images/color/... and DATA/images/silhouette/... (from script 00)
-
-OUTPUTS (300 dpi PNGs in OUTPUT/figures/, one CSV in OUTPUT/tables/)
-    - eda_images_per_style.png                 images per art style + per Pokemon
-    - eda_sample_grid.png                      color/silhouette examples
-                                               (shows Pokemon artwork -> gitignored)
-    - analysis_plan_flowchart.png              MI2 analysis plan
-    - eda_fill_ratio_by_style.png              fill-ratio boxplots by style
-    - eda_silhouette_fragmentation_by_style.png  connected components by style
-    - OUTPUT/tables/silhouette_quality_by_style.csv  components/holes stats
-
-HOW TO RUN (from the repository root)
-    python SCRIPTS/01_eda_figures.py
-
-EXPECTED RUNTIME
-    ~5 s.
-=============================================================================
+Purpose: Summarize the dataset (images per style, examples, fill ratio,
+         silhouette fragmentation) and draw the MI2 analysis-plan flowchart.
+Inputs:  DATA/manifest.csv, DATA/images/ (from 00)
+Outputs: OUTPUT/figures/eda_*.png, analysis_plan_flowchart.png
+         (eda_sample_grid.png shows artwork -> gitignored);
+         OUTPUT/tables/silhouette_quality_by_style.csv
+Run:     python SCRIPTS/01_eda_figures.py
+Runtime: ~5 s
 """
 
 from pathlib import Path
@@ -41,26 +22,24 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Patch
 from PIL import Image
 from scipy import ndimage
 
-# Paths are resolved from the repo root (parent of SCRIPTS/), so the script runs
-# from any working directory.
+# Paths, relative to the repo root
 ROOT = Path(__file__).resolve().parent.parent
 FIG = ROOT / "OUTPUT" / "figures"
 TAB = ROOT / "OUTPUT" / "tables"
-SEED = 4002   # project-wide random seed (used for the bootstrap CIs in fig 5)
+SEED = 4002   # for bootstrap CIs in fig 5
 df = pd.read_csv(ROOT / "DATA" / "manifest.csv")
 
-# Shared visual vocabulary: each split has one fixed color used in every figure.
-
+# One fixed color per split, used in every figure
 SPLITS = ["train", "val", "test", "excluded"]
 SPLIT_LABEL = {"train": "Train", "val": "Validation", "test": "Test (HOME)",
                "excluded": "Excluded"}
 SPLIT_COLOR = {"train": "#2a78d6", "val": "#eb6834", "test": "#1baf7a",
                "excluded": "#b9b7b0"}
-INK, INK_2, GRID = "#0b0b0b", "#52514e", "#e4e3df"
-STYLE_ORDER = list(dict.fromkeys(df["source_style"]))  # build order: art, gen I..V, HOME
+INK, INK_2, GRID = "#0b0b0b", "#52514e", "#e4e3df"   # text, secondary text, grid
+STYLE_ORDER = list(dict.fromkeys(df["source_style"]))  # oldest to newest
 STYLE_SPLIT = df.drop_duplicates("source_style").set_index("source_style")["split"]
 
-# Small fonts sized for a two-column report; recessive axes and grid.
+# Plot style: small fonts, light axes
 plt.rcParams.update({
     "font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8,
     "xtick.labelsize": 7, "ytick.labelsize": 7, "legend.fontsize": 7,
@@ -72,28 +51,29 @@ plt.rcParams.update({
 
 
 def style_label(style):
-    """Axis label for a style, with its game generation when it has one."""
+    """Style name plus its generation."""
     gen = df.loc[df["source_style"] == style, "generation"].iloc[0]
     return style if pd.isna(gen) else f"{style} (Gen {int(gen)})"
 
 
 def split_legend(ax, **kw):
-    """Legend mapping the four split colors to their names."""
+    """Legend for the split colors."""
     handles = [Patch(color=SPLIT_COLOR[s], label=SPLIT_LABEL[s]) for s in SPLITS]
     ax.legend(handles=handles, frameon=False, **kw)
 
 
 def fig1_images_per_style():
-    """Panel A: image count per art style (colored by split).
-    Panel B: images per Pokemon, to confirm every class is equally represented."""
+    """Images per style (A) and per Pokemon (B)."""
+    # Panel A: bar per style
     counts = df["source_style"].value_counts().reindex(STYLE_ORDER)
     fig, (ax1, ax2) = plt.subplots(
         2, 1, figsize=(4.2, 5.6), gridspec_kw={"height_ratios": [3.2, 1]})
 
-    y = range(len(counts))[::-1]
+    y = range(len(counts))[::-1]           # first style on top
     ax1.barh(list(y), counts.values, height=0.75,
              color=[SPLIT_COLOR[STYLE_SPLIT[s]] for s in counts.index])
     ax1.set_yticks(list(y), [style_label(s) for s in counts.index])
+    # Count labels at bar ends
     for yi, v in zip(y, counts.values):
         ax1.text(v + 2, yi, str(v), va="center", fontsize=6.5, color=INK_2)
     ax1.set_xlim(0, counts.max() * 1.15)
@@ -104,6 +84,7 @@ def fig1_images_per_style():
     split_legend(ax1, loc="lower left", bbox_to_anchor=(-0.02, 1.0), ncol=4,
                  borderaxespad=0.2, handlelength=1.0, handletextpad=0.4, columnspacing=0.8)
 
+    # Panel B: images per Pokemon (excluded art left out)
     per = df[df["split"] != "excluded"].groupby("pokedex_id").size()
     lo, hi = per.min(), per.max()
     ax2.hist(per, bins=range(lo - 2, hi + 4), color=INK_2, rwidth=0.8, align="left")
@@ -111,6 +92,7 @@ def fig1_images_per_style():
     ax2.set_xlabel("Images per Pokémon")
     ax2.set_ylabel("Pokémon")
     ax2.set_title("B. Images per Pokémon (train + val + test)", loc="left", fontweight="bold")
+    # Note when every Pokemon has the same count
     if lo == hi:
         ax2.text(0.03, 0.9, f"All {len(per)} Pokémon\nhave {lo} images",
                  transform=ax2.transAxes, va="top", fontsize=7, color=INK_2)
@@ -123,13 +105,14 @@ def fig1_images_per_style():
 
 
 def fig2_sample_grid():
-    """Four well-known Pokemon in four styles, color above silhouette.
-    NOTE: this figure shows copyrighted artwork and is gitignored."""
+    """Example color/silhouette pairs (shows artwork -> gitignored)."""
+    # 4 Pokemon x 4 styles (excluded, oldest train, newest train, test)
     pokemon = [(25, "Pikachu"), (6, "Charizard"), (94, "Gengar"), (133, "Eevee")]
     styles = [("official-artwork", "Official art\n(excluded)"), ("red-blue", "Gen I sprite\nRed/Blue"),
               ("diamond-pearl", "Gen IV sprite\nDiamond/Pearl"), ("home", "HOME\n(test)")]
-    rows = df.set_index(["pokedex_id", "source_style"])
+    rows = df.set_index(["pokedex_id", "source_style"])   # (id, style) lookup
 
+    # Two rows per Pokemon: color, then silhouette
     fig, axes = plt.subplots(2 * len(pokemon), len(styles), figsize=(4.3, 7.6),
                              gridspec_kw={"hspace": 0.04, "wspace": 0.1})
     for r, (pid, name) in enumerate(pokemon):
@@ -137,15 +120,16 @@ def fig2_sample_grid():
             rec = rows.loc[(pid, style)]
             for k, col in enumerate(["color_path", "silhouette_path"]):
                 ax = axes[2 * r + k, c]
+                # Nearest keeps pixel sprites crisp
                 ax.imshow(Image.open(ROOT / rec[col]).convert("RGB"), interpolation="nearest")
                 ax.set_xticks([])
                 ax.set_yticks([])
-                for sp in ax.spines.values():
+                for sp in ax.spines.values():   # light frame
                     sp.set_visible(True)
                     sp.set_color(GRID)
-                if r == 0 and k == 0:
+                if r == 0 and k == 0:           # style titles on first row
                     ax.set_title(label, fontsize=7)
-                if c == 0:
+                if c == 0:                      # row labels in first column
                     ax.set_ylabel("color" if k == 0 else "silhouette", fontsize=6.5, color=INK_2)
         # Pokemon name spans its pair of rows
         top = axes[2 * r, 0].get_position()
@@ -157,7 +141,7 @@ def fig2_sample_grid():
 
 
 def fig3_analysis_plan():
-    """Flowchart of the MI2 analysis plan (no data, pure diagram)."""
+    """Flowchart of the MI2 analysis plan."""
     steps = [
         ("Build dataset", "Gen 1 (#1–151), front default forms"),
         ("Crop to bounding box", "alpha > 0 bounding box + 5% margin"),
@@ -169,6 +153,7 @@ def fig3_analysis_plan():
         ("Evaluate on HOME", "top-1, top-5, macro F1; goal >70% silhouette top-1"),
         ("Analyze", "color vs. silhouette gap, confusion pairs, Grad-CAM"),
     ]
+    # Box height, gap, width
     box_h, gap, w = 0.62, 0.32, 3.4
     total = len(steps) * box_h + (len(steps) - 1) * gap
     fig, ax = plt.subplots(figsize=(3.8, total * 0.95 + 0.2))
@@ -176,7 +161,8 @@ def fig3_analysis_plan():
     ax.set_ylim(-0.05, total + 0.05)
     ax.axis("off")
 
-    x0 = (3.8 - w) / 2
+    x0 = (3.8 - w) / 2                     # center boxes
+    # Boxes top to bottom; highlight the test-set step
     for i, (title, sub) in enumerate(steps):
         y = total - i * (box_h + gap) - box_h
         highlight = title.startswith("Evaluate")
@@ -188,7 +174,7 @@ def fig3_analysis_plan():
                 fontsize=8.5, fontweight="bold", color=INK)
         ax.text(x0 + w / 2, y + box_h * 0.28, sub, ha="center", va="center",
                 fontsize=6.5, color=INK_2)
-        if i < len(steps) - 1:
+        if i < len(steps) - 1:             # arrow to next step
             ax.add_patch(FancyArrowPatch(
                 (x0 + w / 2, y - 0.02), (x0 + w / 2, y - gap + 0.02),
                 arrowstyle="-|>", mutation_scale=9, color=INK_2, lw=1.0))
@@ -197,9 +183,8 @@ def fig3_analysis_plan():
 
 
 def fig4_fill_ratio():
-    """Boxplots of fill ratio (share of the 224x224 frame covered by the Pokemon)
-    by style. Large differences would mean object scale differs across splits."""
-    order = STYLE_ORDER[::-1]
+    """Fill ratio (share of frame covered by the Pokemon) by style."""
+    order = STYLE_ORDER[::-1]              # first style on top
     data = [df.loc[df["source_style"] == s, "fill_ratio"] for s in order]
     fig, ax = plt.subplots(figsize=(4.2, 4.6))
     bp = ax.boxplot(data, vert=False, widths=0.6, patch_artist=True,
@@ -207,6 +192,7 @@ def fig4_fill_ratio():
                     flierprops={"marker": "o", "markersize": 2.5, "markeredgewidth": 0,
                                 "markerfacecolor": INK_2, "alpha": 0.6},
                     whiskerprops={"color": INK_2}, capprops={"color": INK_2})
+    # Color boxes by split
     for patch, s in zip(bp["boxes"], order):
         patch.set(facecolor=SPLIT_COLOR[STYLE_SPLIT[s]], alpha=0.85, edgecolor=INK_2, lw=0.6)
     ax.set_yticks(range(1, len(order) + 1), [style_label(s) for s in order])
@@ -224,45 +210,43 @@ def fig4_fill_ratio():
 
 
 def silhouette_quality(path):
-    """Return (black components with 8-connectivity, enclosed white holes).
-
-    Holes use 4-connectivity for white, the dual of 8-connected black, so a hole
-    that only touches the outside diagonally still counts as enclosed.
-    """
-    black = np.asarray(Image.open(ROOT / path)) == 0
+    """Return (black components, enclosed white holes) for one silhouette."""
+    black = np.asarray(Image.open(ROOT / path)) == 0      # Pokemon pixels
+    # Black regions, counting diagonal neighbors as connected
     _, n_components = ndimage.label(black, structure=np.ones((3, 3), dtype=int))
+    # White regions not touching the border are holes
     white, n_white = ndimage.label(~black)
     border = np.unique(np.concatenate([white[0], white[-1], white[:, 0], white[:, -1]]))
-    n_holes = n_white - np.count_nonzero(border)
+    n_holes = n_white - np.count_nonzero(border)          # label 0 = black
     return n_components, n_holes
 
 
 def fig5_silhouette_quality():
-    """Mean number of connected black components per silhouette, by style.
-    A clean silhouette is one blob; more components means the alpha mask is
-    fragmented (e.g. detached outline pixels in early Gen I sprites)."""
+    """Mean connected components per silhouette by style (1 = clean)."""
+    # Measure all 2,265 silhouettes
     q = df[["pokedex_id", "name", "source_style", "split"]].copy()
     q[["components", "holes"]] = [silhouette_quality(p) for p in df["silhouette_path"]]
 
     print("Silhouette quality by source_style (components: 8-conn black; holes: enclosed white)")
     stats = q.groupby("source_style")[["components", "holes"]].agg(["mean", "median"])
     print(stats.reindex(STYLE_ORDER).round(2).to_string())
-    # Save the same stats as a table so they can be cited in DATA/README.md.
+    # Save stats table
     flat = stats.reindex(STYLE_ORDER).round(3)
     flat.columns = [f"{a}_{b}" for a, b in flat.columns]
     flat.to_csv(TAB / "silhouette_quality_by_style.csv")
+    # Worst Gen I cases
     for style in ["red-blue", "yellow"]:
         top = q[q["source_style"] == style].nlargest(5, "components")
         print(f"\nMost components in {style}:")
         print(top[["pokedex_id", "name", "components", "holes"]].to_string(index=False))
 
-    # Nearly every silhouette is a single component, so quartiles all sit at 1 and a
-    # boxplot collapses; show means with 95% bootstrap CIs instead.
+    # Medians are all 1, so plot means with 95% bootstrap CIs instead of boxplots
     order = STYLE_ORDER[::-1]
     rng = np.random.default_rng(SEED)
     means, lo, hi = [], [], []
     for style in order:
         x = q.loc[q["source_style"] == style, "components"].to_numpy()
+        # 2,000 resamples -> percentile CI
         boot = rng.choice(x, size=(2000, len(x))).mean(axis=1)
         means.append(x.mean())
         lo.append(x.mean() - np.percentile(boot, 2.5))
@@ -270,6 +254,7 @@ def fig5_silhouette_quality():
     fig, ax = plt.subplots(figsize=(4.2, 4.6))
     y = np.arange(len(order))
     ax.barh(y, means, height=0.7, color=[SPLIT_COLOR[STYLE_SPLIT[s]] for s in order])
+    # Asymmetric CI error bars
     ax.errorbar(means, y, xerr=[lo, hi], fmt="none", ecolor=INK, elinewidth=0.8, capsize=2)
     for yi, m, h in zip(y, means, hi):
         ax.text(m + h + 0.05, yi, f"{m:.2f}", va="center", fontsize=6.5, color=INK_2)
@@ -288,6 +273,7 @@ def fig5_silhouette_quality():
 
 
 if __name__ == "__main__":
+    # Create output folders, then draw each figure
     FIG.mkdir(parents=True, exist_ok=True)
     TAB.mkdir(parents=True, exist_ok=True)
     fig1_images_per_style()

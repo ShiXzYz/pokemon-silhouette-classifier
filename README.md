@@ -22,19 +22,19 @@ trained on full-color images?
 
 **Predefined success criterion (MI2):** the silhouette CNN reaches **at least 70%
 top-1 accuracy** on a held-out art style (*Pokémon HOME* renders) **and** is
-significantly better than a k-nearest-neighbor silhouette baseline (two-sided
-exact McNemar test, p < 0.05).
+significantly better than a k-nearest-neighbor silhouette baseline [1]
+(two-sided exact McNemar test [2], p < 0.05).
 
 ## Contents of the Repository
 
 This repository contains all code, metadata, and results needed to reproduce our
 analysis of the 151 Generation I Pokémon. `SCRIPTS/` holds six numbered Python
 scripts (plus a shared helper module and a `run_all.sh` driver). They rebuild
-the image dataset from the public PokeAPI sprites repository, draw exploratory
-figures, run a k-NN pixel baseline, fine-tune an ImageNet-pretrained ResNet-18
-on color images and on silhouettes, evaluate all models on the test art style
-with significance tests and bootstrap confidence intervals, and draw Grad-CAM
-heatmaps. `DATA/` holds the image manifest (labels, splits, and paths) and its
+the image dataset from the public PokeAPI sprites repository [3], draw
+exploratory figures, run a k-NN pixel baseline [1], fine-tune an
+ImageNet-pretrained ResNet-18 [4], [5] on color images and on silhouettes,
+evaluate all models on the test art style with significance tests [2] and
+bootstrap confidence intervals [6], and draw Grad-CAM heatmaps [7]. `DATA/` holds the image manifest (labels, splits, and paths) and its
 metadata README. **The copyrighted Pokémon images themselves are not
 committed**; `SCRIPTS/00_build_dataset.py` downloads and rebuilds them
 identically. `OUTPUT/` holds every figure and table reported below.
@@ -60,11 +60,11 @@ Exact versions are pinned in [`requirements.txt`](requirements.txt):
 | `pillow` | 12.0.0 | Reading, cropping, resizing images |
 | `requests` | 2.32.5 | PokeAPI REST calls (only if the name/type cache is incomplete) |
 | `scipy` | 1.16.3 | Connected-component analysis of silhouettes (EDA) |
-| `scikit-learn` | 1.7.2 | `KNeighborsClassifier` baseline, macro F1 |
+| `scikit-learn` | 1.7.2 | `KNeighborsClassifier` baseline [1], macro F1 |
 | `matplotlib` | 3.10.7 | All figures |
 | `statsmodels` | 0.15.0 | Exact McNemar test |
 | `torch` | 2.15.0 | CNN training and inference, Grad-CAM |
-| `torchvision` | 0.29.2 | ResNet-18 + ImageNet weights, data augmentation |
+| `torchvision` | 0.29.2 | ResNet-18 [4] + ImageNet weights [5], data augmentation |
 
 ### Platform
 
@@ -100,7 +100,10 @@ pokemon-silhouette-classifier/
 │   ├── raw/                      <- [gitignored] sparse clone of PokeAPI/sprites, created by 00
 │   └── images/                   <- [gitignored] 224×224 color/ and silhouette/ PNGs, created by 00
 │
-├── models/                       <- [gitignored] trained weights from 03 (12 runs + 2 selected *_best.pt)
+├── MODEL/                        <- trained ResNet-18 weights from 03 (~45 MB each)
+│   ├── cnn_color_best.pt         <- final color CNN (selected on validation), used by 04/05
+│   ├── cnn_silhouette_best.pt    <- final silhouette CNN (selected on validation), used by 04/05
+│   └── cnn_<mode>_<gen1|nogen1>_lr<lr>.pt <- [gitignored] the 12 per-run checkpoints, recreated by 03
 │
 └── OUTPUT/
     ├── run_all_log.txt           <- full console log of the reproduction run, with per-step times
@@ -115,9 +118,22 @@ pokemon-silhouette-classifier/
     │   ├── confusion_matrix_cnn_by_type.png     <- test confusions aggregated by primary type
     │   └── gradcam/
     │       ├── gradcam_grid_silhouette.png      <- Grad-CAM for 12 test Pokémon, silhouette CNN
-    │       ├── silhouette/gradcam_silhouette_<dex>_<name>.png  <- one figure per Pokémon
     │       ├── gradcam_grid_color.png           <- [gitignored, shows artwork] same, color CNN
-    │       └── color/gradcam_color_<dex>_<name>.png            <- [gitignored, shows artwork]
+    │       ├── silhouette/                      <- one figure per Pokémon (input + heatmap)
+    │       │   ├── gradcam_silhouette_001_bulbasaur.png
+    │       │   ├── gradcam_silhouette_015_beedrill.png
+    │       │   ├── gradcam_silhouette_032_nidoran-m.png
+    │       │   ├── gradcam_silhouette_058_growlithe.png
+    │       │   ├── gradcam_silhouette_077_ponyta.png
+    │       │   ├── gradcam_silhouette_078_rapidash.png
+    │       │   ├── gradcam_silhouette_081_magnemite.png
+    │       │   ├── gradcam_silhouette_089_muk.png
+    │       │   ├── gradcam_silhouette_110_weezing.png
+    │       │   ├── gradcam_silhouette_125_electabuzz.png
+    │       │   ├── gradcam_silhouette_126_magmar.png
+    │       │   └── gradcam_silhouette_138_omanyte.png
+    │       └── color/                           <- [gitignored, shows artwork] same 12 Pokémon,
+    │                                               named gradcam_color_<dex>_<name>.png
     └── tables/
         ├── silhouette_quality_by_style.csv      <- mean/median components and holes per style (01)
         ├── knn_test_predictions.csv             <- k-NN top-5 predictions on HOME (02)
@@ -188,7 +204,7 @@ what each produces.
 python SCRIPTS/00_build_dataset.py
 ```
 
-This downloads the Pokémon sprites from <https://github.com/PokeAPI/sprites>
+This downloads the Pokémon sprites from the PokeAPI sprites repository [3]
 (a blobless sparse clone of the 15 folders we use, pinned to commit
 `1b3b7c0a`, ≈800 MB on disk in `DATA/raw/`; a slow connection can stretch this
 step to a few minutes). It then crops, pads, and resizes
@@ -219,7 +235,7 @@ python SCRIPTS/02_knn_baseline.py
 ```
 
 Classifies each HOME test image by its single nearest training image
-(Euclidean distance on 64×64 pixels). **Expected:** `k-NN (k=1) color top-1:
+(scikit-learn `KNeighborsClassifier` [1], Euclidean distance on 64×64 pixels). **Expected:** `k-NN (k=1) color top-1:
 0.2980`, `silhouette top-1: 0.4967`, and `OUTPUT/tables/knn_test_predictions.csv`.
 This is fully deterministic and should match to every digit.
 
@@ -241,7 +257,7 @@ All other settings are fixed and identical for both modes:
 
 | Setting | Value |
 |---|---|
-| Model | torchvision ResNet-18, `IMAGENET1K_V1` weights, all layers fine-tuned, new 151-way output layer |
+| Model | torchvision ResNet-18 [4], [5], `IMAGENET1K_V1` weights, all layers fine-tuned, new 151-way output layer |
 | Input | 224×224; silhouettes replicated from 1 to 3 channels; ImageNet mean/std normalization for both modes |
 | Augmentation (training only) | random rotation ±15°, scale 90–110%, translation ≤5%, white fill; no flips, no color jitter |
 | Optimizer | AdamW, weight decay 1e-4, batch size 32, cross-entropy loss |
@@ -255,9 +271,15 @@ Gen I setting with the higher val top-1 (ties: macro F1, then val loss, then
 keep Gen I). The test set is **never loaded** in this step.
 
 **Expected:** 12 rows in `OUTPUT/tables/val_runs.csv`, per-epoch logs in
-`training_history.csv`, the choice in `selected_models.csv`, and weights in
-`models/` (gitignored, ≈45 MB each). Our per-run results are in
-[Section 4](#4-results).
+`training_history.csv`, the choice in `selected_models.csv`, and 14 weight
+files in `MODEL/` (≈45 MB each; this overwrites the two committed `*_best.pt`
+files). Our
+per-run results are in [Section 4](#4-results).
+
+**Shortcut (skip training):** our two final models are committed in `MODEL/`,
+so you can skip Step 6 and go straight to Steps 7–8 to reproduce the test
+results from our exact models. You still need Steps 3 and 5 first, because
+Step 7 needs the images and the k-NN predictions.
 
 ### Step 7: Evaluate on the test set (≈5 s)
 
@@ -267,7 +289,7 @@ python SCRIPTS/04_evaluate.py
 
 This is the only script that scores models on the test set (HOME), and it runs
 each final CNN once. It computes top-1, top-5, and macro F1 for all five models,
-exact McNemar tests, paired-bootstrap CIs (10,000 resamples, seed 4002), the
+exact McNemar tests [2], paired-bootstrap CIs [6] (10,000 resamples, seed 4002), the
 finish-line check, and the confusion analysis. **Expected:** the console ends with
 a `FINISH LINE` block and `RESULT: PASS` or `RESULT: FAIL`, and the tables and
 figures listed in Section 2 are written.
@@ -310,8 +332,9 @@ git diff --stat OUTPUT/tables/
   Grad-CAM maps) are generated locally but **gitignored** because the images are
   copyrighted. Silhouette figures contain only black outlines and summary
   charts contain no imagery.
-- `models/` is gitignored because the weights are too large for GitHub; Step 6
-  recreates them.
+- `MODEL/` contains only our two final models (≈90 MB), so the evaluation can be
+  reproduced without retraining. The 12 per-run checkpoints are gitignored, since
+  their results are recorded in `val_runs.csv`. Step 6 regenerates all 14.
 
 ## 4. Results
 
@@ -347,7 +370,7 @@ HOME is. Training stopped after 8–15 epochs in every run.
 | k-NN (color) | 29.8% (45/151) | 22.5–37.1% | 45.0% | 0.261 |
 | Random guess | 0.7% (1/151) | — | 3.3% | 0.005 (expected) |
 
-**Exact McNemar tests** (two-sided, α = 0.05; `mcnemar_tests.csv`):
+**Exact McNemar tests** [2] (two-sided, α = 0.05; `mcnemar_tests.csv`):
 
 | Comparison | A right, B wrong | A wrong, B right | p-value | Significant? |
 |---|---:|---:|---:|:--:|
@@ -355,7 +378,7 @@ HOME is. Training stopped after 8–15 epochs in every run.
 | (b) CNN silhouette vs k-NN silhouette | 58 | 12 | 2.25 × 10⁻⁸ | yes |
 | (c) CNN color vs k-NN color | 66 | 13 | 1.08 × 10⁻⁹ | yes |
 
-**Paired bootstrap 95% CIs for accuracy gaps** (10,000 resamples, seed 4002; `bootstrap_cis.csv`):
+**Paired bootstrap 95% CIs for accuracy gaps** [6] (10,000 resamples, seed 4002; `bootstrap_cis.csv`):
 color CNN − silhouette CNN = **−15.2 points [−24.5, −6.0]**;
 silhouette CNN − k-NN silhouette = +30.5 [+21.2, +39.7];
 color CNN − k-NN color = +35.1 [+25.2, +45.0].
@@ -375,7 +398,7 @@ baseline by 30.5 points (p = 2.25 × 10⁻⁸).
   Both models were perfect on validation, so this gap appears only under the
   larger style shift from 2D pixel sprites to 3D HOME renders. A plausible
   explanation, in line with the texture bias of ImageNet CNNs reported by
-  Geirhos et al. [1], is that the color model relies on palette and shading
+  Geirhos et al. [8], is that the color model relies on palette and shading
   cues that change between games and 3D renders. The silhouette model is
   forced to use outline shape, which transfers across styles.
 - **The color CNN has "sink" classes.** 10 of its 53 errors predict Porygon
@@ -397,7 +420,7 @@ baseline by 30.5 points (p = 2.25 × 10⁻⁸).
   at or above the color CNN for every type except bug (83% vs 92%) and fairy
   (1 of 2 vs 2 of 2). Type counts are small (2–28 Pokémon), so per-type
   differences are descriptive only.
-- **Grad-CAM** (`OUTPUT/figures/gradcam/`, `gradcam_selection.csv`): for both
+- **Grad-CAM** [7] (`OUTPUT/figures/gradcam/`, `gradcam_selection.csv`): for both
   models, heat concentrates on the Pokémon's body rather than the background.
   The share of Grad-CAM mass inside the outline averages 0.54 (color) and 0.52
   (silhouette), against a 0.37 mean area share for these 12 images. The layer4
@@ -439,12 +462,14 @@ baseline by 30.5 points (p = 2.25 × 10⁻⁸).
 ## License and Copyright
 
 The group's original code and documentation are licensed under the MIT
-License, Copyright (c) 2026 Brian Ryu, Keegan Jewell, Nathan Nguyen. See
-[`LICENSE.md`](LICENSE.md) for the full text.
+License. See [`LICENSE.md`](LICENSE.md) for the full text and copyright holder.
 
 Pokémon characters, names, sprites, and artwork remain the property of The
 Pokémon Company, Nintendo, Creatures Inc., and GAME FREAK inc. The MIT License
-does not apply to these third-party materials. Pokémon images are not
+does not apply to these third-party materials, and neither does the CC0 1.0
+dedication [9] of the PokeAPI sprites repository [3], which covers the
+repository, not the artwork. Pokémon names and types come from the PokeAPI
+REST API [10]. Pokémon images are not
 redistributed through this repository: they are downloaded locally by
 `SCRIPTS/00_build_dataset.py`, and figures that display them in color are
 gitignored. See [`DATA/README.md`](DATA/README.md#license) for details.
@@ -460,22 +485,22 @@ All outputs in this repository were regenerated by a clean run of
 
 ## References
 
-[1] R. Geirhos, P. Rubisch, C. Michaelis, M. Bethge, F. A. Wichmann, and W. Brendel, "ImageNet-trained CNNs are biased towards texture; increasing shape bias improves accuracy and robustness," in *Proc. Int. Conf. Learning Representations (ICLR)*, 2019.
+[1] scikit-learn developers, "sklearn.neighbors.KNeighborsClassifier," scikit-learn documentation. [Online]. Available: https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html (accessed Nov. 20, 2026).
 
-[2] R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D. Batra, "Grad-CAM: Visual explanations from deep networks via gradient-based localization," in *Proc. IEEE Int. Conf. Computer Vision (ICCV)*, 2017, pp. 618–626.
+[2] T. G. Dietterich, "Approximate statistical tests for comparing supervised classification learning algorithms," *Neural Computation*, vol. 10, no. 7, pp. 1895–1923, 1998.
 
 [3] PokeAPI, "sprites: Collection of Pokémon sprites," GitHub repository. [Online]. Available: https://github.com/PokeAPI/sprites (accessed Nov. 20, 2026).
 
-[4] PokeAPI, "PokéAPI: The RESTful Pokémon API," documentation. [Online]. Available: https://pokeapi.co/docs/v2 (accessed Nov. 20, 2026).
+[4] K. He, X. Zhang, S. Ren, and J. Sun, "Deep residual learning for image recognition," in *Proc. IEEE Conf. Computer Vision and Pattern Recognition (CVPR)*, 2016, pp. 770–778.
 
-[5] K. He, X. Zhang, S. Ren, and J. Sun, "Deep residual learning for image recognition," in *Proc. IEEE Conf. Computer Vision and Pattern Recognition (CVPR)*, 2016, pp. 770–778.
+[5] PyTorch Contributors, "Models and pre-trained weights," torchvision documentation. [Online]. Available: https://pytorch.org/vision/stable/models.html (accessed Nov. 20, 2026).
 
-[6] PyTorch Contributors, "Models and pre-trained weights," torchvision documentation. [Online]. Available: https://pytorch.org/vision/stable/models.html (accessed Nov. 20, 2026).
+[6] B. Efron and R. J. Tibshirani, *An Introduction to the Bootstrap*. New York, NY, USA: Chapman & Hall, 1993.
 
-[7] Creative Commons, "CC0 1.0 Universal (CC0 1.0) Public Domain Dedication." [Online]. Available: https://creativecommons.org/publicdomain/zero/1.0/ (accessed Nov. 20, 2026).
+[7] R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D. Batra, "Grad-CAM: Visual explanations from deep networks via gradient-based localization," in *Proc. IEEE Int. Conf. Computer Vision (ICCV)*, 2017, pp. 618–626.
 
-[8] scikit-learn developers, "sklearn.neighbors.KNeighborsClassifier," scikit-learn documentation. [Online]. Available: https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html (accessed Nov. 20, 2026).
+[8] R. Geirhos, P. Rubisch, C. Michaelis, M. Bethge, F. A. Wichmann, and W. Brendel, "ImageNet-trained CNNs are biased towards texture; increasing shape bias improves accuracy and robustness," in *Proc. Int. Conf. Learning Representations (ICLR)*, 2019.
 
-[9] T. G. Dietterich, "Approximate statistical tests for comparing supervised classification learning algorithms," *Neural Computation*, vol. 10, no. 7, pp. 1895–1923, 1998.
+[9] Creative Commons, "CC0 1.0 Universal (CC0 1.0) Public Domain Dedication." [Online]. Available: https://creativecommons.org/publicdomain/zero/1.0/ (accessed Nov. 20, 2026).
 
-[10] B. Efron and R. J. Tibshirani, *An Introduction to the Bootstrap*. New York, NY, USA: Chapman & Hall, 1993.
+[10] PokeAPI, "PokéAPI: The RESTful Pokémon API," documentation. [Online]. Available: https://pokeapi.co/docs/v2 (accessed Nov. 20, 2026).
