@@ -1,0 +1,16 @@
+pokedex_a,name_a,pokedex_b,name_b,n_confusions,directions,mean_wrong_confidence,soft_confusion,same_primary_type,type_a,type_b
+62,poliwrath,68,machamp,1,machamp->poliwrath,0.650359,0.6508578,False,water,fighting
+77,ponyta,78,rapidash,1,rapidash->ponyta,0.30814973,0.32942197,True,fire,fire
+41,zubat,55,golduck,1,golduck->zubat,0.27701083,0.2793297,False,poison,water
+96,drowzee,125,electabuzz,1,electabuzz->drowzee,0.26858976,0.27151096,False,psychic,electric
+32,nidoran-m,33,nidorino,1,nidorino->nidoran-m,0.23078449,0.24713856,True,poison,poison
+147,dratini,148,dragonair,1,dratini->dragonair,0.18675105,0.22370213,True,dragon,dragon
+92,gastly,94,gengar,1,gastly->gengar,0.21521425,0.21777603,True,ghost,ghost
+44,gloom,45,vileplume,1,gloom->vileplume,0.20695275,0.21568424,True,grass,grass
+79,slowpoke,100,voltorb,1,voltorb->slowpoke,0.20444235,0.20749944,False,water,electric
+27,sandshrew,96,drowzee,1,sandshrew->drowzee,0.20050113,0.20492023,False,ground,psychic
+41,zubat,130,gyarados,1,gyarados->zubat,0.19040239,0.19252788,False,poison,water
+62,poliwrath,67,machoke,1,machoke->poliwrath,0.1908932,0.19200039,False,water,fighting
+137,porygon,144,articuno,1,articuno->porygon,0.18523557,0.18618543,False,normal,ice
+129,magikarp,137,porygon,1,magikarp->porygon,0.1610448,0.16499433,False,water,normal
+41,zubat,42,golbat,1,zubat->golbat,0.14401096,0.16292463,True,poison,poison

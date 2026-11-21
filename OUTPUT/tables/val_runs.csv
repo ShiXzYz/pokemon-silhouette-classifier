@@ -1,0 +1,13 @@
+run,mode,exclude_gen1,lr,n_train,best_epoch,epochs_run,val_top1,val_top5,val_macro_f1,val_loss,train_seconds,device
+cnn_color_gen1_lr0.0001,color,False,0.0001,1812,4,9,1.0,1.0,1.0,0.3625069558620453,60.9,mps (Apple-silicon GPU)
+cnn_color_gen1_lr0.0003,color,False,0.0003,1812,4,9,1.0,1.0,1.0,0.0424636974930763,62.2,mps (Apple-silicon GPU)
+cnn_color_gen1_lr0.001,color,False,0.001,1812,9,14,0.9867549668874172,1.0,0.9823399558498896,0.0602872371673584,97.7,mps (Apple-silicon GPU)
+cnn_color_nogen1_lr0.0001,color,True,0.0001,1359,4,9,1.0,1.0,1.0,0.4648564755916595,47.1,mps (Apple-silicon GPU)
+cnn_color_nogen1_lr0.0003,color,True,0.0003,1359,3,8,1.0,1.0,1.0,0.1200934872031211,41.4,mps (Apple-silicon GPU)
+cnn_color_nogen1_lr0.001,color,True,0.001,1359,3,8,0.9933774834437086,1.0,0.991169977924945,0.1029615700244903,40.9,mps (Apple-silicon GPU)
+cnn_silhouette_gen1_lr0.0001,silhouette,False,0.0001,1812,10,15,1.0,1.0,1.0,0.1797659993171692,99.5,mps (Apple-silicon GPU)
+cnn_silhouette_gen1_lr0.0003,silhouette,False,0.0003,1812,9,14,1.0,1.0,1.0,0.0605240054428577,93.0,mps (Apple-silicon GPU)
+cnn_silhouette_gen1_lr0.001,silhouette,False,0.001,1812,9,14,0.9801324503311258,1.0,0.975717439293598,0.094574861228466,92.2,mps (Apple-silicon GPU)
+cnn_silhouette_nogen1_lr0.0001,silhouette,True,0.0001,1359,10,15,0.9933774834437086,1.0,0.9911699779249448,0.2533532679080963,74.3,mps (Apple-silicon GPU)
+cnn_silhouette_nogen1_lr0.0003,silhouette,True,0.0003,1359,10,15,1.0,1.0,1.0,0.0689690187573432,74.4,mps (Apple-silicon GPU)
+cnn_silhouette_nogen1_lr0.001,silhouette,True,0.001,1359,5,10,0.9867549668874173,0.9933774834437086,0.9823399558498895,0.14463570713996887,49.2,mps (Apple-silicon GPU)

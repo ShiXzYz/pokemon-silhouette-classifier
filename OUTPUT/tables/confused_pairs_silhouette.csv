@@ -1,0 +1,16 @@
+pokedex_a,name_a,pokedex_b,name_b,n_confusions,directions,mean_wrong_confidence,soft_confusion,same_primary_type,type_a,type_b
+100,voltorb,101,electrode,1,voltorb->electrode,0.9350586,0.9527726,True,electric,electric
+31,nidoqueen,115,kangaskhan,1,kangaskhan->nidoqueen,0.68797904,0.7197173,False,poison,normal
+16,pidgey,17,pidgeotto,1,pidgey->pidgeotto,0.70187044,0.70418894,True,normal,normal
+102,exeggcute,116,horsea,1,horsea->exeggcute,0.63559234,0.63572156,False,grass,water
+32,nidoran-m,33,nidorino,1,nidoran-m->nidorino,0.62153,0.6349316,True,poison,poison
+74,geodude,75,graveler,1,graveler->geodude,0.5201803,0.521561,True,rock,rock
+34,nidoking,55,golduck,1,nidoking->golduck,0.51420385,0.515176,False,poison,water
+126,magmar,127,pinsir,1,magmar->pinsir,0.48916337,0.492378,False,fire,bug
+79,slowpoke,89,muk,1,muk->slowpoke,0.46446773,0.4701174,False,water,poison
+10,caterpie,14,kakuna,1,caterpie->kakuna,0.42065543,0.4207145,True,bug,bug
+18,pidgeot,41,zubat,1,pidgeot->zubat,0.411748,0.4131206,False,normal,poison
+17,pidgeotto,21,spearow,1,spearow->pidgeotto,0.36022374,0.36100924,True,normal,normal
+1,bulbasaur,39,jigglypuff,1,bulbasaur->jigglypuff,0.35745275,0.35946956,False,grass,normal
+50,diglett,51,dugtrio,1,diglett->dugtrio,0.35873285,0.35882017,True,ground,ground
+104,cubone,115,kangaskhan,1,cubone->kangaskhan,0.34446126,0.3479011,False,ground,normal

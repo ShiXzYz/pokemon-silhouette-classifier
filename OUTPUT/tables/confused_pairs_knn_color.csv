@@ -1,0 +1,16 @@
+pokedex_a,name_a,pokedex_b,name_b,n_confusions,directions,mean_wrong_confidence,soft_confusion,same_primary_type,type_a,type_b
+92,gastly,94,gengar,2,gastly->gengar; gengar->gastly,,,True,ghost,ghost
+2,ivysaur,111,rhyhorn,1,ivysaur->rhyhorn,,,False,grass,ground
+3,venusaur,89,muk,1,venusaur->muk,,,False,grass,poison
+5,charmeleon,149,dragonite,1,charmeleon->dragonite,,,False,fire,dragon
+6,charizard,108,lickitung,1,charizard->lickitung,,,False,fire,normal
+7,squirtle,87,dewgong,1,squirtle->dewgong,,,True,water,water
+8,wartortle,86,seel,1,wartortle->seel,,,True,water,water
+9,blastoise,92,gastly,1,blastoise->gastly,,,False,water,ghost
+10,caterpie,66,machop,1,caterpie->machop,,,False,bug,fighting
+12,butterfree,49,venomoth,1,butterfree->venomoth,,,True,bug,bug
+13,weedle,92,gastly,1,weedle->gastly,,,False,bug,ghost
+15,beedrill,118,goldeen,1,beedrill->goldeen,,,False,bug,water
+16,pidgey,92,gastly,1,pidgey->gastly,,,False,normal,ghost
+17,pidgeotto,118,goldeen,1,pidgeotto->goldeen,,,False,normal,water
+17,pidgeotto,133,eevee,1,eevee->pidgeotto,,,True,normal,normal
