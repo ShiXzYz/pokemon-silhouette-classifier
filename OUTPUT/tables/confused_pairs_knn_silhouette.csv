@@ -1,0 +1,16 @@
+pokedex_a,name_a,pokedex_b,name_b,n_confusions,directions,mean_wrong_confidence,soft_confusion,same_primary_type,type_a,type_b
+2,ivysaur,113,chansey,1,ivysaur->chansey,,,False,grass,normal
+3,venusaur,140,kabuto,1,venusaur->kabuto,,,False,grass,rock
+4,charmander,5,charmeleon,1,charmeleon->charmander,,,True,fire,fire
+6,charizard,94,gengar,1,charizard->gengar,,,False,fire,ghost
+7,squirtle,60,poliwag,1,poliwag->squirtle,,,True,water,water
+9,blastoise,138,omanyte,1,blastoise->omanyte,,,False,water,rock
+9,blastoise,28,sandslash,1,sandslash->blastoise,,,False,water,ground
+11,metapod,42,golbat,1,golbat->metapod,,,False,bug,poison
+11,metapod,105,marowak,1,marowak->metapod,,,False,bug,ground
+12,butterfree,49,venomoth,1,butterfree->venomoth,,,True,bug,bug
+14,kakuna,52,meowth,1,meowth->kakuna,,,False,bug,normal
+15,beedrill,46,paras,1,beedrill->paras,,,True,bug,bug
+17,pidgeotto,145,zapdos,1,pidgeotto->zapdos,,,False,normal,electric
+18,pidgeot,67,machoke,1,pidgeot->machoke,,,False,normal,fighting
+20,raticate,34,nidoking,1,raticate->nidoking,,,False,normal,poison

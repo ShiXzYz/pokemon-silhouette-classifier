@@ -1,0 +1,4 @@
+comparison,model_a,model_b,top1_a,top1_b,both_correct,a_correct_b_wrong,a_wrong_b_correct,both_wrong,n_discordant,statistic,p_value,significant_at_0.05
+a,cnn_color,cnn_silhouette,0.6490066225165563,0.8013245033112583,83,15,38,15,53,15.0,0.0021901868838920535,True
+b,cnn_silhouette,knn_silhouette,0.8013245033112583,0.4966887417218543,63,58,12,18,70,12.0,2.2489162308892232e-08,True
+c,cnn_color,knn_color,0.6490066225165563,0.2980132450331126,32,66,13,40,79,13.0,1.0781441177091488e-09,True

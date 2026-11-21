@@ -1,0 +1,4 @@
+criterion,value,met
+silhouette CNN top-1 >= 70%,0.8013245033112583,True
+"silhouette CNN > k-NN silhouette, McNemar p < 0.05",2.2489162308892232e-08,True
+OVERALL,,True

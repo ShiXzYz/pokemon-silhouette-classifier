@@ -1,4 +1,19 @@
-data/
+# --- Copyrighted Pokémon images (© The Pokémon Company) - never commit ---
+# Rebuild locally with: python SCRIPTS/00_build_dataset.py
+DATA/raw/
+DATA/images/
+
+# Figures that display Pokémon artwork in color. Generated locally; ask the
+# group before committing any of these (they are copyrighted images).
+OUTPUT/figures/eda_sample_grid.png
+OUTPUT/figures/gradcam/color/
+OUTPUT/figures/gradcam/gradcam_grid_color.png
+
+# --- Model weights (too large for git; regenerate with 03_train_cnn.py) ---
+models/
+
+# --- Environment / OS clutter ---
+.venv/
 __pycache__/
+*.pyc
 .DS_Store
-figures/fig2_sample_grid.png

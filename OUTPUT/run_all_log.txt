@@ -1,0 +1,402 @@
+
+=== [22:01:33] Environment: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python -c import sys, platform, torch; print('python', sys.version.split()[0], '|', platform.platform()); print('torch', torch.__version__, '| cuda', torch.cuda.is_available(), '| mps', torch.backends.mps.is_available()) ===
+python 3.13.7 | macOS-27.0.1-arm64-arm-64bit-Mach-O
+torch 2.15.0 | cuda False | mps True
+--- Environment finished in 0 min 0 s
+
+=== [22:01:33] 00 Build dataset: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python SCRIPTS/00_build_dataset.py ===
+Cloning into '/Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/DATA/raw/pokeapi-sprites'...
+From https://github.com/PokeAPI/sprites
+ * branch            1b3b7c0a538dd2226ae08d0d2f8955125075bbd4 -> FETCH_HEAD
+Wrote DATA/manifest.csv (2265 rows)
+Dropped for no alpha channel: 0
+
+=== Dataset stats ===
+Total images: 2265
+
+Images per split:
+split
+train       1812
+val          151
+test         151
+excluded     151
+
+Images per Pokemon (train+val+test): min=14  median=14  max=14
+
+Count by source_style:
+source_style
+official-artwork        151
+red-blue                151
+red-green-japan         151
+yellow                  151
+gold                    151
+silver                  151
+crystal                 151
+ruby-sapphire           151
+emerald                 151
+firered-leafgreen       151
+diamond-pearl           151
+platinum                151
+heartgold-soulsilver    151
+black-white             151
+home                    151
+
+Pokemon missing per split:
+  train: none
+  val: none
+  test: none
+
+Mean fill_ratio by source_style:
+source_style
+official-artwork        0.370
+red-blue                0.509
+red-green-japan         0.511
+yellow                  0.483
+gold                    0.482
+silver                  0.482
+crystal                 0.484
+ruby-sapphire           0.432
+emerald                 0.431
+firered-leafgreen       0.424
+diamond-pearl           0.400
+platinum                0.396
+heartgold-soulsilver    0.389
+black-white             0.398
+home                    0.376
+--- 00 Build dataset finished in 0 min 28 s
+
+=== [22:02:01] 01 EDA figures: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python SCRIPTS/01_eda_figures.py ===
+Silhouette quality by source_style (components: 8-conn black; holes: enclosed white)
+                     components        holes       
+                           mean median  mean median
+source_style                                       
+official-artwork           1.13    1.0  2.52    1.0
+red-blue                   2.26    1.0  0.83    0.0
+red-green-japan            2.27    1.0  1.89    0.0
+yellow                     1.12    1.0  1.52    1.0
+gold                       1.15    1.0  2.92    1.0
+silver                     1.21    1.0  3.25    1.0
+crystal                    1.09    1.0  2.66    1.0
+ruby-sapphire              1.08    1.0  1.85    1.0
+emerald                    1.09    1.0  1.79    1.0
+firered-leafgreen          1.09    1.0  1.72    1.0
+diamond-pearl              1.10    1.0  1.75    1.0
+platinum                   1.15    1.0  1.80    1.0
+heartgold-soulsilver       1.09    1.0  1.15    0.0
+black-white                1.12    1.0  1.67    1.0
+home                       1.09    1.0  2.49    1.0
+
+Most components in red-blue:
+ pokedex_id    name  components  holes
+         92  gastly          82      0
+         44   gloom          32      2
+         93 haunter          32      0
+        109 koffing          12      0
+         51 dugtrio           9      0
+
+Most components in yellow:
+ pokedex_id    name  components  holes
+        109 koffing           8      0
+        110 weezing           8      0
+        126  magmar           3      9
+         92  gastly           2      1
+         93 haunter           2      2
+Saved:
+  analysis_plan_flowchart.png
+  eda_fill_ratio_by_style.png
+  eda_images_per_style.png
+  eda_sample_grid.png
+  eda_silhouette_fragmentation_by_style.png
+--- 01 EDA figures finished in 0 min 2 s
+
+=== [22:02:03] 02 k-NN baseline: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python SCRIPTS/02_knn_baseline.py ===
+Train: 1812 images, test (HOME): 151 images, 151 classes
+Random guess top-1: 0.0066 (0.66%)  top-5: 0.0331 (3.31%)
+k-NN (k=1) color      top-1: 0.2980 (29.80%)  top-5: 0.4503 (45.03%)
+k-NN (k=1) silhouette top-1: 0.4967 (49.67%)  top-5: 0.6689 (66.89%)
+Saved OUTPUT/tables/knn_test_predictions.csv
+--- 02 k-NN baseline finished in 0 min 3 s
+
+=== [22:02:06] 03 Train color, with Gen I: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python SCRIPTS/03_train_cnn.py --mode color ===
+Device: mps (Apple-silicon GPU)   torch 2.15.0
+
+--- cnn_color_gen1_lr0.0001: 1812 train / 151 val images ---
+  epoch  1  train loss 4.427 acc 0.191 | val top-1 0.695 top-5 0.914 F1 0.623  *  (7.1s)
+  epoch  2  train loss 2.609 acc 0.741 | val top-1 0.960 top-5 0.993 F1 0.948  *  (6.6s)
+  epoch  3  train loss 1.491 acc 0.921 | val top-1 0.993 top-5 1.000 F1 0.991  *  (6.6s)
+  epoch  4  train loss 0.836 acc 0.978 | val top-1 1.000 top-5 1.000 F1 1.000  *  (6.7s)
+  epoch  5  train loss 0.488 acc 0.990 | val top-1 1.000 top-5 1.000 F1 1.000  (6.6s)
+  epoch  6  train loss 0.281 acc 0.997 | val top-1 1.000 top-5 1.000 F1 1.000  (6.7s)
+  epoch  7  train loss 0.191 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (6.9s)
+  epoch  8  train loss 0.132 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (6.7s)
+  epoch  9  train loss 0.097 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (6.7s)
+  early stop: no val improvement for 5 epochs
+  best epoch 4: val top-1 1.0000  (1.0 min)
+
+--- cnn_color_gen1_lr0.0003: 1812 train / 151 val images ---
+  epoch  1  train loss 3.631 acc 0.328 | val top-1 0.907 top-5 1.000 F1 0.880  *  (6.8s)
+  epoch  2  train loss 1.102 acc 0.897 | val top-1 0.980 top-5 1.000 F1 0.974  *  (6.9s)
+  epoch  3  train loss 0.333 acc 0.982 | val top-1 0.993 top-5 1.000 F1 0.991  *  (6.8s)
+  epoch  4  train loss 0.127 acc 0.997 | val top-1 1.000 top-5 1.000 F1 1.000  *  (6.9s)
+  epoch  5  train loss 0.061 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (6.9s)
+  epoch  6  train loss 0.033 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (6.9s)
+  epoch  7  train loss 0.025 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (6.9s)
+  epoch  8  train loss 0.019 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (6.9s)
+  epoch  9  train loss 0.014 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (7.0s)
+  early stop: no val improvement for 5 epochs
+  best epoch 4: val top-1 1.0000  (1.0 min)
+
+--- cnn_color_gen1_lr0.001: 1812 train / 151 val images ---
+  epoch  1  train loss 3.567 acc 0.270 | val top-1 0.709 top-5 0.887 F1 0.625  *  (7.3s)
+  epoch  2  train loss 1.004 acc 0.776 | val top-1 0.901 top-5 0.987 F1 0.872  *  (7.0s)
+  epoch  3  train loss 0.362 acc 0.931 | val top-1 0.967 top-5 1.000 F1 0.956  *  (7.0s)
+  epoch  4  train loss 0.173 acc 0.974 | val top-1 0.960 top-5 1.000 F1 0.947  (7.1s)
+  epoch  5  train loss 0.125 acc 0.978 | val top-1 0.980 top-5 1.000 F1 0.974  *  (7.1s)
+  epoch  6  train loss 0.073 acc 0.989 | val top-1 0.954 top-5 0.987 F1 0.938  (7.0s)
+  epoch  7  train loss 0.098 acc 0.978 | val top-1 0.947 top-5 0.993 F1 0.930  (6.9s)
+  epoch  8  train loss 0.144 acc 0.972 | val top-1 0.960 top-5 1.000 F1 0.949  (6.9s)
+  epoch  9  train loss 0.060 acc 0.988 | val top-1 0.987 top-5 1.000 F1 0.982  *  (6.8s)
+  epoch 10  train loss 0.090 acc 0.982 | val top-1 0.974 top-5 1.000 F1 0.965  (6.9s)
+  epoch 11  train loss 0.088 acc 0.985 | val top-1 0.987 top-5 1.000 F1 0.982  (6.9s)
+  epoch 12  train loss 0.065 acc 0.991 | val top-1 0.914 top-5 0.980 F1 0.891  (6.9s)
+  epoch 13  train loss 0.090 acc 0.978 | val top-1 0.914 top-5 0.980 F1 0.899  (6.8s)
+  epoch 14  train loss 0.101 acc 0.980 | val top-1 0.967 top-5 1.000 F1 0.956  (7.0s)
+  early stop: no val improvement for 5 epochs
+  best epoch 9: val top-1 0.9868  (1.6 min)
+
+Finished 3 runs in 3.7 min. Results in OUTPUT/tables/val_runs.csv
+--- 03 Train color, with Gen I finished in 3 min 44 s
+
+=== [22:05:50] 03 Train color, without Gen I: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python SCRIPTS/03_train_cnn.py --mode color --exclude-gen1 ===
+Device: mps (Apple-silicon GPU)   torch 2.15.0
+
+--- cnn_color_nogen1_lr0.0001: 1359 train / 151 val images ---
+  epoch  1  train loss 4.489 acc 0.155 | val top-1 0.623 top-5 0.868 F1 0.547  *  (5.4s)
+  epoch  2  train loss 2.668 acc 0.812 | val top-1 0.927 top-5 0.993 F1 0.903  *  (5.0s)
+  epoch  3  train loss 1.546 acc 0.969 | val top-1 0.987 top-5 1.000 F1 0.982  *  (5.2s)
+  epoch  4  train loss 0.847 acc 0.993 | val top-1 1.000 top-5 1.000 F1 1.000  *  (5.2s)
+  epoch  5  train loss 0.471 acc 0.999 | val top-1 1.000 top-5 1.000 F1 1.000  (5.2s)
+  epoch  6  train loss 0.283 acc 0.999 | val top-1 1.000 top-5 1.000 F1 1.000  (5.2s)
+  epoch  7  train loss 0.190 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (5.2s)
+  epoch  8  train loss 0.135 acc 0.999 | val top-1 1.000 top-5 1.000 F1 1.000  (5.2s)
+  epoch  9  train loss 0.102 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (5.1s)
+  early stop: no val improvement for 5 epochs
+  best epoch 4: val top-1 1.0000  (0.8 min)
+
+--- cnn_color_nogen1_lr0.0003: 1359 train / 151 val images ---
+  epoch  1  train loss 3.656 acc 0.383 | val top-1 0.907 top-5 0.987 F1 0.877  *  (5.1s)
+  epoch  2  train loss 1.000 acc 0.946 | val top-1 0.993 top-5 1.000 F1 0.991  *  (5.4s)
+  epoch  3  train loss 0.264 acc 0.997 | val top-1 1.000 top-5 1.000 F1 1.000  *  (5.2s)
+  epoch  4  train loss 0.099 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (5.2s)
+  epoch  5  train loss 0.056 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (5.2s)
+  epoch  6  train loss 0.034 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (5.1s)
+  epoch  7  train loss 0.025 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (5.1s)
+  epoch  8  train loss 0.019 acc 1.000 | val top-1 1.000 top-5 1.000 F1 1.000  (5.1s)
+  early stop: no val improvement for 5 epochs
+  best epoch 3: val top-1 1.0000  (0.7 min)
+
+--- cnn_color_nogen1_lr0.001: 1359 train / 151 val images ---
+  epoch  1  train loss 3.414 acc 0.346 | val top-1 0.563 top-5 0.868 F1 0.492  *  (5.1s)
+  epoch  2  train loss 0.689 acc 0.886 | val top-1 0.927 top-5 0.993 F1 0.903  *  (5.1s)
+  epoch  3  train loss 0.175 acc 0.977 | val top-1 0.993 top-5 1.000 F1 0.991  *  (5.1s)
+  epoch  4  train loss 0.086 acc 0.990 | val top-1 0.993 top-5 1.000 F1 0.991  (5.2s)
+  epoch  5  train loss 0.051 acc 0.993 | val top-1 0.993 top-5 1.000 F1 0.991  (5.1s)
+  epoch  6  train loss 0.067 acc 0.989 | val top-1 0.914 top-5 0.993 F1 0.891  (5.1s)
+  epoch  7  train loss 0.061 acc 0.989 | val top-1 0.987 top-5 1.000 F1 0.982  (5.1s)
+  epoch  8  train loss 0.051 acc 0.993 | val top-1 0.993 top-5 1.000 F1 0.991  (5.1s)
+  early stop: no val improvement for 5 epochs
+  best epoch 3: val top-1 0.9934  (0.7 min)
+
+Finished 3 runs in 2.2 min. Results in OUTPUT/tables/val_runs.csv
+--- 03 Train color, without Gen I finished in 2 min 13 s
+
+=== [22:08:03] 03 Train silhouette, with Gen I: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python SCRIPTS/03_train_cnn.py --mode silhouette ===
+Device: mps (Apple-silicon GPU)   torch 2.15.0
+
+--- cnn_silhouette_gen1_lr0.0001: 1812 train / 151 val images ---
+  epoch  1  train loss 4.645 acc 0.109 | val top-1 0.444 top-5 0.742 F1 0.352  *  (6.8s)
+  epoch  2  train loss 3.288 acc 0.561 | val top-1 0.828 top-5 0.934 F1 0.776  *  (6.4s)
+  epoch  3  train loss 2.323 acc 0.804 | val top-1 0.881 top-5 0.987 F1 0.841  *  (6.6s)
+  epoch  4  train loss 1.628 acc 0.895 | val top-1 0.914 top-5 0.987 F1 0.885  *  (6.6s)
+  epoch  5  train loss 1.144 acc 0.948 | val top-1 0.940 top-5 1.000 F1 0.921  *  (6.6s)
+  epoch  6  train loss 0.782 acc 0.967 | val top-1 0.967 top-5 1.000 F1 0.956  *  (6.6s)
+  epoch  7  train loss 0.549 acc 0.986 | val top-1 0.974 top-5 1.000 F1 0.965  *  (6.7s)
+  epoch  8  train loss 0.393 acc 0.990 | val top-1 0.987 top-5 1.000 F1 0.982  *  (6.6s)
+  epoch  9  train loss 0.287 acc 0.996 | val top-1 0.993 top-5 1.000 F1 0.991  *  (6.6s)
+  epoch 10  train loss 0.224 acc 0.997 | val top-1 1.000 top-5 1.000 F1 1.000  *  (6.6s)
+  epoch 11  train loss 0.161 acc 0.998 | val top-1 0.993 top-5 1.000 F1 0.991  (6.7s)
+  epoch 12  train loss 0.134 acc 0.999 | val top-1 1.000 top-5 1.000 F1 1.000  (6.6s)
+  epoch 13  train loss 0.108 acc 0.998 | val top-1 1.000 top-5 1.000 F1 1.000  (6.7s)
+  epoch 14  train loss 0.087 acc 0.998 | val top-1 1.000 top-5 1.000 F1 1.000  (6.6s)
+  epoch 15  train loss 0.077 acc 0.996 | val top-1 1.000 top-5 1.000 F1 1.000  (6.6s)
+  early stop: no val improvement for 5 epochs
+  best epoch 10: val top-1 1.0000  (1.7 min)
+
+--- cnn_silhouette_gen1_lr0.0003: 1812 train / 151 val images ---
+  epoch  1  train loss 4.137 acc 0.226 | val top-1 0.695 top-5 0.901 F1 0.619  *  (6.7s)
+  epoch  2  train loss 2.029 acc 0.735 | val top-1 0.921 top-5 0.980 F1 0.894  *  (6.6s)
+  epoch  3  train loss 0.961 acc 0.914 | val top-1 0.940 top-5 0.993 F1 0.921  *  (6.6s)
+  epoch  4  train loss 0.469 acc 0.966 | val top-1 0.987 top-5 1.000 F1 0.982  *  (6.6s)
+  epoch  5  train loss 0.252 acc 0.988 | val top-1 0.987 top-5 1.000 F1 0.982  (6.6s)
+  epoch  6  train loss 0.140 acc 0.994 | val top-1 0.987 top-5 1.000 F1 0.982  (6.6s)
+  epoch  7  train loss 0.077 acc 0.998 | val top-1 0.987 top-5 1.000 F1 0.982  (6.6s)
+  epoch  8  train loss 0.059 acc 0.997 | val top-1 0.980 top-5 1.000 F1 0.974  (6.6s)
+  epoch  9  train loss 0.058 acc 0.995 | val top-1 1.000 top-5 1.000 F1 1.000  *  (6.7s)
+  epoch 10  train loss 0.034 acc 0.998 | val top-1 0.987 top-5 1.000 F1 0.982  (6.6s)
+  epoch 11  train loss 0.031 acc 0.998 | val top-1 0.993 top-5 1.000 F1 0.991  (6.6s)
+  epoch 12  train loss 0.041 acc 0.996 | val top-1 0.993 top-5 1.000 F1 0.991  (6.7s)
+  epoch 13  train loss 0.035 acc 0.997 | val top-1 1.000 top-5 1.000 F1 1.000  (6.5s)
+  epoch 14  train loss 0.017 acc 0.998 | val top-1 0.993 top-5 1.000 F1 0.991  (6.8s)
+  early stop: no val improvement for 5 epochs
+  best epoch 9: val top-1 1.0000  (1.5 min)
+
+--- cnn_silhouette_gen1_lr0.001: 1812 train / 151 val images ---
+  epoch  1  train loss 3.987 acc 0.197 | val top-1 0.503 top-5 0.748 F1 0.408  *  (6.6s)
+  epoch  2  train loss 1.618 acc 0.663 | val top-1 0.841 top-5 0.974 F1 0.798  *  (6.4s)
+  epoch  3  train loss 0.701 acc 0.869 | val top-1 0.894 top-5 0.993 F1 0.862  *  (6.5s)
+  epoch  4  train loss 0.377 acc 0.935 | val top-1 0.947 top-5 0.987 F1 0.929  *  (6.5s)
+  epoch  5  train loss 0.218 acc 0.966 | val top-1 0.967 top-5 1.000 F1 0.956  *  (6.5s)
+  epoch  6  train loss 0.152 acc 0.972 | val top-1 0.934 top-5 0.987 F1 0.916  (6.5s)
+  epoch  7  train loss 0.097 acc 0.985 | val top-1 0.960 top-5 0.980 F1 0.948  (6.6s)
+  epoch  8  train loss 0.103 acc 0.983 | val top-1 0.940 top-5 0.993 F1 0.922  (6.6s)
+  epoch  9  train loss 0.124 acc 0.982 | val top-1 0.980 top-5 1.000 F1 0.976  *  (6.5s)
+  epoch 10  train loss 0.057 acc 0.992 | val top-1 0.967 top-5 0.993 F1 0.956  (6.5s)
+  epoch 11  train loss 0.026 acc 0.997 | val top-1 0.967 top-5 1.000 F1 0.956  (6.6s)
+  epoch 12  train loss 0.042 acc 0.992 | val top-1 0.967 top-5 1.000 F1 0.958  (6.5s)
+  epoch 13  train loss 0.069 acc 0.988 | val top-1 0.947 top-5 1.000 F1 0.929  (6.6s)
+  epoch 14  train loss 0.099 acc 0.980 | val top-1 0.960 top-5 1.000 F1 0.950  (7.1s)
+  early stop: no val improvement for 5 epochs
+  best epoch 9: val top-1 0.9801  (1.5 min)
+
+Finished 3 runs in 4.8 min. Results in OUTPUT/tables/val_runs.csv
+--- 03 Train silhouette, with Gen I finished in 4 min 49 s
+
+=== [22:12:52] 03 Train silhouette, without Gen I: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python SCRIPTS/03_train_cnn.py --mode silhouette --exclude-gen1 ===
+Device: mps (Apple-silicon GPU)   torch 2.15.0
+
+--- cnn_silhouette_nogen1_lr0.0001: 1359 train / 151 val images ---
+  epoch  1  train loss 4.740 acc 0.064 | val top-1 0.291 top-5 0.576 F1 0.209  *  (5.5s)
+  epoch  2  train loss 3.493 acc 0.497 | val top-1 0.748 top-5 0.934 F1 0.673  *  (4.9s)
+  epoch  3  train loss 2.569 acc 0.811 | val top-1 0.868 top-5 0.967 F1 0.827  *  (4.9s)
+  epoch  4  train loss 1.831 acc 0.911 | val top-1 0.947 top-5 0.987 F1 0.929  *  (4.8s)
+  epoch  5  train loss 1.272 acc 0.965 | val top-1 0.967 top-5 0.993 F1 0.956  *  (4.9s)
+  epoch  6  train loss 0.880 acc 0.988 | val top-1 0.954 top-5 0.993 F1 0.938  (4.8s)
+  epoch  7  train loss 0.627 acc 0.985 | val top-1 0.967 top-5 1.000 F1 0.956  (4.9s)
+  epoch  8  train loss 0.430 acc 0.994 | val top-1 0.974 top-5 1.000 F1 0.965  *  (4.9s)
+  epoch  9  train loss 0.319 acc 0.996 | val top-1 0.987 top-5 1.000 F1 0.982  *  (5.0s)
+  epoch 10  train loss 0.242 acc 0.997 | val top-1 0.993 top-5 1.000 F1 0.991  *  (5.0s)
+  epoch 11  train loss 0.187 acc 0.998 | val top-1 0.993 top-5 1.000 F1 0.991  (4.9s)
+  epoch 12  train loss 0.155 acc 0.998 | val top-1 0.987 top-5 1.000 F1 0.982  (4.9s)
+  epoch 13  train loss 0.119 acc 1.000 | val top-1 0.993 top-5 1.000 F1 0.991  (4.9s)
+  epoch 14  train loss 0.102 acc 1.000 | val top-1 0.993 top-5 1.000 F1 0.991  (4.9s)
+  epoch 15  train loss 0.085 acc 0.999 | val top-1 0.987 top-5 1.000 F1 0.982  (4.9s)
+  early stop: no val improvement for 5 epochs
+  best epoch 10: val top-1 0.9934  (1.2 min)
+
+--- cnn_silhouette_nogen1_lr0.0003: 1359 train / 151 val images ---
+  epoch  1  train loss 4.286 acc 0.206 | val top-1 0.589 top-5 0.881 F1 0.504  *  (5.1s)
+  epoch  2  train loss 2.198 acc 0.753 | val top-1 0.874 top-5 0.980 F1 0.836  *  (5.0s)
+  epoch  3  train loss 1.015 acc 0.935 | val top-1 0.954 top-5 1.000 F1 0.938  *  (5.0s)
+  epoch  4  train loss 0.457 acc 0.983 | val top-1 0.980 top-5 1.000 F1 0.974  *  (5.0s)
+  epoch  5  train loss 0.238 acc 0.995 | val top-1 0.993 top-5 1.000 F1 0.991  *  (4.9s)
+  epoch  6  train loss 0.134 acc 0.994 | val top-1 0.987 top-5 1.000 F1 0.982  (4.9s)
+  epoch  7  train loss 0.081 acc 0.997 | val top-1 0.987 top-5 1.000 F1 0.982  (5.0s)
+  epoch  8  train loss 0.055 acc 0.999 | val top-1 0.987 top-5 1.000 F1 0.982  (4.9s)
+  epoch  9  train loss 0.042 acc 0.998 | val top-1 0.993 top-5 1.000 F1 0.991  (4.9s)
+  epoch 10  train loss 0.035 acc 0.997 | val top-1 1.000 top-5 1.000 F1 1.000  *  (4.9s)
+  epoch 11  train loss 0.041 acc 0.996 | val top-1 1.000 top-5 1.000 F1 1.000  (4.9s)
+  epoch 12  train loss 0.030 acc 0.997 | val top-1 0.993 top-5 1.000 F1 0.991  (4.9s)
+  epoch 13  train loss 0.019 acc 0.999 | val top-1 1.000 top-5 1.000 F1 1.000  (4.9s)
+  epoch 14  train loss 0.020 acc 0.998 | val top-1 0.993 top-5 1.000 F1 0.991  (4.9s)
+  epoch 15  train loss 0.014 acc 1.000 | val top-1 0.993 top-5 1.000 F1 0.991  (4.9s)
+  early stop: no val improvement for 5 epochs
+  best epoch 10: val top-1 1.0000  (1.2 min)
+
+--- cnn_silhouette_nogen1_lr0.001: 1359 train / 151 val images ---
+  epoch  1  train loss 4.281 acc 0.169 | val top-1 0.510 top-5 0.775 F1 0.418  *  (5.0s)
+  epoch  2  train loss 1.801 acc 0.655 | val top-1 0.781 top-5 0.960 F1 0.724  *  (4.9s)
+  epoch  3  train loss 0.718 acc 0.893 | val top-1 0.848 top-5 0.967 F1 0.811  *  (4.9s)
+  epoch  4  train loss 0.309 acc 0.965 | val top-1 0.934 top-5 0.993 F1 0.913  *  (4.9s)
+  epoch  5  train loss 0.179 acc 0.976 | val top-1 0.987 top-5 0.993 F1 0.982  *  (4.9s)
+  epoch  6  train loss 0.109 acc 0.985 | val top-1 0.974 top-5 0.993 F1 0.965  (4.9s)
+  epoch  7  train loss 0.081 acc 0.990 | val top-1 0.967 top-5 0.987 F1 0.957  (4.9s)
+  epoch  8  train loss 0.040 acc 0.996 | val top-1 0.980 top-5 1.000 F1 0.974  (4.9s)
+  epoch  9  train loss 0.024 acc 0.997 | val top-1 0.980 top-5 0.993 F1 0.974  (4.9s)
+  epoch 10  train loss 0.025 acc 0.998 | val top-1 0.987 top-5 0.993 F1 0.982  (4.9s)
+  early stop: no val improvement for 5 epochs
+  best epoch 5: val top-1 0.9868  (0.8 min)
+
+Finished 3 runs in 3.3 min. Results in OUTPUT/tables/val_runs.csv
+--- 03 Train silhouette, without Gen I finished in 3 min 21 s
+
+=== [22:16:13] 03 Select final models: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python SCRIPTS/03_train_cnn.py --select ===
+Mean over color/silhouette x Gen I settings, by learning rate:
+        val_top1  val_loss
+lr                        
+0.0003    1.0000    0.0730
+0.0001    0.9983    0.3151
+0.0010    0.9868    0.1006
+-> shared learning rate: 0.0003
+color: with Gen I = 1.0000 (loss 0.042)  vs  without Gen I = 1.0000 (loss 0.120)  -> cnn_color_gen1_lr0.0003
+silhouette: with Gen I = 1.0000 (loss 0.061)  vs  without Gen I = 1.0000 (loss 0.069)  -> cnn_silhouette_gen1_lr0.0003
+Saved OUTPUT/tables/selected_models.csv
+--- 03 Select final models finished in 0 min 2 s
+
+=== [22:16:15] 04 Evaluate on HOME: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python SCRIPTS/04_evaluate.py ===
+Device: mps (Apple-silicon GPU)
+cnn_color: lr=0.0003, exclude_gen1=False, best epoch 4, val top-1 1.0000
+cnn_silhouette: lr=0.0003, exclude_gen1=False, best epoch 9, val top-1 1.0000
+
+=== HOME test results (n = 151) ===
+                            label    top1    top5  macro_f1  top1_ci_low  top1_ci_high
+model                                                                                 
+cnn_color             CNN (color)  0.6490  0.8874    0.5885       0.5695        0.7219
+cnn_silhouette   CNN (silhouette)  0.8013  0.9404    0.7550       0.7351        0.8609
+knn_color            k-NN (color)  0.2980  0.4503    0.2611       0.2252        0.3709
+knn_silhouette  k-NN (silhouette)  0.4967  0.6689    0.4230       0.4172        0.5762
+random               Random guess  0.0066  0.0331    0.0050          NaN           NaN
+
+=== McNemar tests (exact, two-sided) ===
+comparison        model_a        model_b  a_correct_b_wrong  a_wrong_b_correct      p_value  significant_at_0.05
+         a      cnn_color cnn_silhouette                 15                 38 2.190187e-03                 True
+         b cnn_silhouette knn_silhouette                 58                 12 2.248916e-08                 True
+         c      cnn_color      knn_color                 66                 13 1.078144e-09                 True
+
+=== Paired bootstrap 95% CIs ===
+                               quantity  estimate  ci_low_2.5  ci_high_97.5
+                         top1_cnn_color    0.6490      0.5695        0.7219
+                    top1_cnn_silhouette    0.8013      0.7351        0.8609
+                         top1_knn_color    0.2980      0.2252        0.3709
+                    top1_knn_silhouette    0.4967      0.4172        0.5762
+     gap_cnn_color_minus_cnn_silhouette   -0.1523     -0.2450       -0.0596
+gap_cnn_silhouette_minus_knn_silhouette    0.3046      0.2119        0.3975
+          gap_cnn_color_minus_knn_color    0.3510      0.2517        0.4503
+
+Disagreements: 15 color-only, 38 silhouette-only
+
+============================================================
+FINISH LINE: silhouette CNN top-1 = 80.13% (>= 70%); vs k-NN silhouette p = 2.25e-08
+RESULT: PASS
+============================================================
+--- 04 Evaluate on HOME finished in 0 min 4 s
+
+=== [22:16:19] 05 Grad-CAM: /Users/brian/Desktop/UVA/Classes/Fourth Year/DS/pokemon-silhouette-classifier/.venv/bin/python SCRIPTS/05_gradcam.py ===
+ pokedex_id       name                   group color_pred  color_correct  color_cam_share_on_pokemon silhouette_pred  silhouette_correct  silhouette_cam_share_on_pokemon
+         15   beedrill            both correct   beedrill           True                      0.5186        beedrill                True                           0.4472
+         77     ponyta            both correct     ponyta           True                      0.4890          ponyta                True                           0.4775
+         81  magnemite            both correct  magnemite           True                      0.4133       magnemite                True                           0.3377
+        110    weezing            both correct    weezing           True                      0.5502         weezing                True                           0.5048
+          1  bulbasaur      color only correct  bulbasaur           True                      0.7148      jigglypuff               False                           0.6592
+         32  nidoran-m      color only correct  nidoran-m           True                      0.6397        nidorino               False                           0.6703
+        138    omanyte      color only correct    omanyte           True                      0.8122            jynx               False                           0.6337
+         58  growlithe silhouette only correct     gastly          False                      0.5091       growlithe                True                           0.6289
+         78   rapidash silhouette only correct     ponyta          False                      0.4949        rapidash                True                           0.5012
+        125 electabuzz silhouette only correct    drowzee          False                      0.5281      electabuzz                True                           0.4607
+         89        muk              both wrong  poliwrath          False                      0.4317        slowpoke               False                           0.3802
+        126     magmar              both wrong    voltorb          False                      0.4149          pinsir               False                           0.5107
+
+Mean share of Grad-CAM mass on the Pokemon: color 0.543, silhouette 0.518
+Saved figures to OUTPUT/figures/gradcam/
+--- 05 Grad-CAM finished in 0 min 5 s
+
+All steps finished in 14 min. Log: OUTPUT/run_all_log.txt

@@ -1,7 +1,35 @@
-"""EDA / analysis-plan figures for MI2. Saves 300 dpi PNGs to figures/.
+"""
+=============================================================================
+01_eda_figures.py - Exploratory data analysis figures
+=============================================================================
+Project : DS 4002 Project 3, "Who's That Pokemon?" (pokemon-silhouette-classifier)
+Authors : Brian Ryu, Keegan Jewell, Nathan Nguyen
 
-Usage: python scripts/eda_figures.py
-Run scripts/build_dataset.py first.
+PURPOSE
+    Describe the dataset built by 00_build_dataset.py: how many images come from
+    each art style and split, what the images look like, how much of each
+    224x224 frame the Pokemon fills, and how clean the silhouettes are
+    (fragmentation). Also draws the analysis-plan flowchart from MI2.
+
+INPUTS
+    - DATA/manifest.csv
+    - DATA/images/color/... and DATA/images/silhouette/... (from script 00)
+
+OUTPUTS (300 dpi PNGs in OUTPUT/figures/, one CSV in OUTPUT/tables/)
+    - eda_images_per_style.png                 images per art style + per Pokemon
+    - eda_sample_grid.png                      color/silhouette examples
+                                               (shows Pokemon artwork -> gitignored)
+    - analysis_plan_flowchart.png              MI2 analysis plan
+    - eda_fill_ratio_by_style.png              fill-ratio boxplots by style
+    - eda_silhouette_fragmentation_by_style.png  connected components by style
+    - OUTPUT/tables/silhouette_quality_by_style.csv  components/holes stats
+
+HOW TO RUN (from the repository root)
+    python SCRIPTS/01_eda_figures.py
+
+EXPECTED RUNTIME
+    ~5 s.
+=============================================================================
 """
 
 from pathlib import Path
@@ -13,9 +41,15 @@ from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Patch
 from PIL import Image
 from scipy import ndimage
 
+# Paths are resolved from the repo root (parent of SCRIPTS/), so the script runs
+# from any working directory.
 ROOT = Path(__file__).resolve().parent.parent
-FIG = ROOT / "figures"
-df = pd.read_csv(ROOT / "data" / "manifest.csv")
+FIG = ROOT / "OUTPUT" / "figures"
+TAB = ROOT / "OUTPUT" / "tables"
+SEED = 4002   # project-wide random seed (used for the bootstrap CIs in fig 5)
+df = pd.read_csv(ROOT / "DATA" / "manifest.csv")
+
+# Shared visual vocabulary: each split has one fixed color used in every figure.
 
 SPLITS = ["train", "val", "test", "excluded"]
 SPLIT_LABEL = {"train": "Train", "val": "Validation", "test": "Test (HOME)",
@@ -26,6 +60,7 @@ INK, INK_2, GRID = "#0b0b0b", "#52514e", "#e4e3df"
 STYLE_ORDER = list(dict.fromkeys(df["source_style"]))  # build order: art, gen I..V, HOME
 STYLE_SPLIT = df.drop_duplicates("source_style").set_index("source_style")["split"]
 
+# Small fonts sized for a two-column report; recessive axes and grid.
 plt.rcParams.update({
     "font.size": 8, "axes.titlesize": 9, "axes.labelsize": 8,
     "xtick.labelsize": 7, "ytick.labelsize": 7, "legend.fontsize": 7,
@@ -37,16 +72,20 @@ plt.rcParams.update({
 
 
 def style_label(style):
+    """Axis label for a style, with its game generation when it has one."""
     gen = df.loc[df["source_style"] == style, "generation"].iloc[0]
     return style if pd.isna(gen) else f"{style} (Gen {int(gen)})"
 
 
 def split_legend(ax, **kw):
+    """Legend mapping the four split colors to their names."""
     handles = [Patch(color=SPLIT_COLOR[s], label=SPLIT_LABEL[s]) for s in SPLITS]
     ax.legend(handles=handles, frameon=False, **kw)
 
 
 def fig1_images_per_style():
+    """Panel A: image count per art style (colored by split).
+    Panel B: images per Pokemon, to confirm every class is equally represented."""
     counts = df["source_style"].value_counts().reindex(STYLE_ORDER)
     fig, (ax1, ax2) = plt.subplots(
         2, 1, figsize=(4.2, 5.6), gridspec_kw={"height_ratios": [3.2, 1]})
@@ -79,11 +118,13 @@ def fig1_images_per_style():
     ax2.set_axisbelow(True)
 
     fig.tight_layout(h_pad=1.5)
-    fig.savefig(FIG / "fig1_images_per_style.png")
+    fig.savefig(FIG / "eda_images_per_style.png")
     plt.close(fig)
 
 
 def fig2_sample_grid():
+    """Four well-known Pokemon in four styles, color above silhouette.
+    NOTE: this figure shows copyrighted artwork and is gitignored."""
     pokemon = [(25, "Pikachu"), (6, "Charizard"), (94, "Gengar"), (133, "Eevee")]
     styles = [("official-artwork", "Official art\n(excluded)"), ("red-blue", "Gen I sprite\nRed/Blue"),
               ("diamond-pearl", "Gen IV sprite\nDiamond/Pearl"), ("home", "HOME\n(test)")]
@@ -111,11 +152,12 @@ def fig2_sample_grid():
         bot = axes[2 * r + 1, 0].get_position()
         fig.text(top.x0 - 0.075, (top.y1 + bot.y0) / 2, name, rotation=90,
                  ha="center", va="center", fontsize=8.5, fontweight="bold")
-    fig.savefig(FIG / "fig2_sample_grid.png")
+    fig.savefig(FIG / "eda_sample_grid.png")
     plt.close(fig)
 
 
 def fig3_analysis_plan():
+    """Flowchart of the MI2 analysis plan (no data, pure diagram)."""
     steps = [
         ("Build dataset", "Gen 1 (#1–151), front default forms"),
         ("Crop to bounding box", "alpha > 0 bounding box + 5% margin"),
@@ -150,11 +192,13 @@ def fig3_analysis_plan():
             ax.add_patch(FancyArrowPatch(
                 (x0 + w / 2, y - 0.02), (x0 + w / 2, y - gap + 0.02),
                 arrowstyle="-|>", mutation_scale=9, color=INK_2, lw=1.0))
-    fig.savefig(FIG / "fig3_analysis_plan.png")
+    fig.savefig(FIG / "analysis_plan_flowchart.png")
     plt.close(fig)
 
 
 def fig4_fill_ratio():
+    """Boxplots of fill ratio (share of the 224x224 frame covered by the Pokemon)
+    by style. Large differences would mean object scale differs across splits."""
     order = STYLE_ORDER[::-1]
     data = [df.loc[df["source_style"] == s, "fill_ratio"] for s in order]
     fig, ax = plt.subplots(figsize=(4.2, 4.6))
@@ -174,7 +218,7 @@ def fig4_fill_ratio():
     split_legend(ax, loc="lower left", bbox_to_anchor=(-0.02, 1.0), ncol=4,
                  borderaxespad=0.2, handlelength=1.0, handletextpad=0.4, columnspacing=0.8)
     fig.tight_layout()
-    fig.savefig(FIG / "fig4_fill_ratio.png")
+    fig.savefig(FIG / "eda_fill_ratio_by_style.png")
     plt.close(fig)
 
 
@@ -194,12 +238,19 @@ def silhouette_quality(path):
 
 
 def fig5_silhouette_quality():
+    """Mean number of connected black components per silhouette, by style.
+    A clean silhouette is one blob; more components means the alpha mask is
+    fragmented (e.g. detached outline pixels in early Gen I sprites)."""
     q = df[["pokedex_id", "name", "source_style", "split"]].copy()
     q[["components", "holes"]] = [silhouette_quality(p) for p in df["silhouette_path"]]
 
     print("Silhouette quality by source_style (components: 8-conn black; holes: enclosed white)")
     stats = q.groupby("source_style")[["components", "holes"]].agg(["mean", "median"])
     print(stats.reindex(STYLE_ORDER).round(2).to_string())
+    # Save the same stats as a table so they can be cited in DATA/README.md.
+    flat = stats.reindex(STYLE_ORDER).round(3)
+    flat.columns = [f"{a}_{b}" for a, b in flat.columns]
+    flat.to_csv(TAB / "silhouette_quality_by_style.csv")
     for style in ["red-blue", "yellow"]:
         top = q[q["source_style"] == style].nlargest(5, "components")
         print(f"\nMost components in {style}:")
@@ -208,7 +259,7 @@ def fig5_silhouette_quality():
     # Nearly every silhouette is a single component, so quartiles all sit at 1 and a
     # boxplot collapses; show means with 95% bootstrap CIs instead.
     order = STYLE_ORDER[::-1]
-    rng = np.random.default_rng(0)
+    rng = np.random.default_rng(SEED)
     means, lo, hi = [], [], []
     for style in order:
         x = q.loc[q["source_style"] == style, "components"].to_numpy()
@@ -232,12 +283,13 @@ def fig5_silhouette_quality():
     split_legend(ax, loc="lower left", bbox_to_anchor=(-0.02, 1.0), ncol=4,
                  borderaxespad=0.2, handlelength=1.0, handletextpad=0.4, columnspacing=0.8)
     fig.tight_layout()
-    fig.savefig(FIG / "fig5_silhouette_quality.png")
+    fig.savefig(FIG / "eda_silhouette_fragmentation_by_style.png")
     plt.close(fig)
 
 
 if __name__ == "__main__":
-    FIG.mkdir(exist_ok=True)
+    FIG.mkdir(parents=True, exist_ok=True)
+    TAB.mkdir(parents=True, exist_ok=True)
     fig1_images_per_style()
     fig2_sample_grid()
     fig3_analysis_plan()
